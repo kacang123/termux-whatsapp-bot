@@ -175,879 +175,191 @@ client.on("disconnected", reason => {
 
 // ======================= WaBot Listen on message
 
-client.on("message", async msg => {
-  console.log(
-    `[ ${moment().format("HH:mm:ss")} ] Message:`,
-    msg.from.replace("@c.us", ""),
-    `| ${msg.type}`,
-    msg.body ? `| ${msg.body}` : ""
-  );
-
-  if (msg.type == "ciphertext") {
-    // Send a new message as a reply to the current one
-    msg.reply("kirim ! menu atau !help untuk melihat menu.");
-  } else if (msg.body == "!ping reply") {
-    // Send a new message as a reply to the current one
-    msg.reply("pong");
-  }
-else if (msg.body.startsWith("!fb ")) {
-
-const request = require('request');
-var req = msg.body.split(" ")[1];
-const { exec } = require("child_process");
-var crypto = require('crypto');
-var fs = require('fs'); 
-var chat = await msg.getChat();
-var filename = 'video'+crypto.randomBytes(4).readUInt32LE(0)+'saya';
-var path = require('path');
-request.get({
-  headers: {'content-type' : 'application/x-www-form-urlencoded'},
-  url:     'https://fbdownloader.net/download/?url='+ req,
-},function(error, response, body){
-    let $ = cheerio.load(body);
-   var gehu = $('a[rel="noreferrer no-follow"]').attr('href');
-
-exec('wget "' + gehu + '" -O mp4/gue.mp4', (error, stdout, stderr) => {
-     const media = MessageMedia.fromFilePath('mp4/gue.mp4');
-chat.sendMessage(media);
-	 
-	if (error) {
-        console.log(`error: ${error.message}`);
-        return;
-    }
-    if (stderr) {
-        console.log(`stderr: ${stderr}`);
-        return;
-    }
-
-    console.log(`stdout: ${stdout}`);
-});
-});
-}else if (msg.body.startsWith("!ig ")) {
-    msg.reply(`*Hai, Kita Proses Dulu Ya . . .*`);
-    let link = msg.body.split(" ")[1];
-	var namafile = link.split("/p/")[1].split("/")[0];
-	var chat = await msg.getChat();
-	const { exec } = require("child_process");
-    const browser = await puppeteer.launch({
-      headless: false,
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage",
-        "--disable-accelerated-2d-canvas",
-        "--disable-gpu",
-        "--window-size=1920x1080",
-      ],
-    });
-    const page = await browser.newPage();
-    await page
-      .goto("https://id.savefrom.net/download-from-instagram", {
-        waitUntil: "networkidle2",
-      })
-      .then(async () => {
-        await page.type("#sf_url", `${link}`);
-        await page.click("#sf_submit");
-        try {
-          msg.reply("Mendownload Video!");
-          await page.waitForSelector(
-            "#sf_result > div > div.result-box.video > div.info-box > div.link-box.single > div.def-btn-box > a"
-          );
-          const element = await page.$(
-            "#sf_result > div > div.result-box.video > div.info-box > div.link-box.single > div.def-btn-box > a"
-          );
-          const text = await (await element.getProperty("href")).jsonValue();
-          const judul = await page.$(
-            "#sf_result > div > div.result-box.video > div.info-box > div.meta > div"
-          );
-          const judul1 = await (await judul.getProperty("title")).jsonValue();
-          console.log(
-            `[${moment().format("hh:mm:ss")}][!fb][${
-              msg.from
-            }] > Berhasil Dilakukan`
-          );
-          msg.reply(
-            `*BERHASIL!!!*
-Judul : ${judul1}
-			  
-			  
- 👾 Instagram Downloader By InsideHeartz 👾`
-          );
-		  
-exec('wget "' + text + '" -O mp4/'+ namafile +'.mp4', (error, stdout, stderr) => {
-  const media = MessageMedia.fromFilePath('mp4/'+ namafile +'.mp4');
-
-	chat.sendMessage(media);
-	if (error) {
-        console.log(`error: ${error.message}`);
-        return;
-    }
-    if (stderr) {
-        console.log(`stderr: ${stderr}`);
-        return;
-    }
-
-    console.log(`stdout: ${stdout}`);
-});
-          browser.close();
-        } catch (error) {
-          console.log(
-            `[${moment().format("hh:mm:ss")}][!fb][${
-              msg.from
-            }] > GAGAL Dilakukan`
-          );
-          msg.reply(
-            `[GAGAL] PASTIKAN LINK VIDEO BERSIFAT PUBLIK DAN DAPAT DIAKSES OLEH SEMUA ORANG!*`
-          );
-          browser.close();
-        }
-      })
-      .catch((err) => {
-        console.log(
-          `[${moment().format("hh:mm:ss")}][!fb][${msg.from}] > GAGAL Dilakukan`
-        );
-        msg.reply(
-          `[GAGAL] Server Sedang Down!\n\nSilahkan Coba Beberapa Saat Lagi!`
-        );
-        browser.close();
-      });
-	 
-	 
-  } 
-  else if (msg.body.startsWith("!brainly ")) {
-var tanya = msg.body.split(" ")[1];
-const fetch = require('node-fetch')
-const url = "https://tools.aqin.my.id/api/brainly/?q="+ tanya;
-const solution = () => {
-  fetch(url).then(res => res.json()).then((res) => {
-    res.data.questionSearch.edges.forEach(item => {
-      console.log("==[content]==")
-      client.sendMessage(
-        msg.from,
-        `		$(item.node.content) `);
-      console.log("=============")
-
-      console.log("==[answer]==")
-      item.node.answers.nodes.forEach(item => {
-        msg.reply(item['content']);
-      })
-      console.log("=========")
-    })
-  })
+const startServer = async () => {
+    create('Imperial', serverOption)
+        .then(client => {
+            console.log('[DEV] Skydxz')
+            console.log('[SERVER] Server Started!')
+            // Force it to keep the current session
+            client.onStateChanged(state => {
+                console.log('[Client State]', state)
+                if (state === 'CONFLICT') client.forceRefocus()
+            })
+            // listening on message
+            client.onMessage((message) => {
+                msgHandler(client, message)
+            })
+        })
 }
 
-}
-else if (msg.body.startsWith("!sial ")) {
-const request = require('request');
-var req = msg.body;
-var tanggal = req.split(" ")[1];
-var kk = req.split(" ")[2];
-var bulan = kk.replace("0", "");
-var tahun = req.split(" ")[3];
-request.post({
-  headers: {'content-type' : 'application/x-www-form-urlencoded'},
-  url:     'http://www.primbon.com/primbon_hari_naas.php',
-  body: "tgl="+ tanggal +"&bln="+ bulan +"&thn="+ tahun +"&submit=+Submit%21+"
-},function(error, response, body){
-    let $ = cheerio.load(body);
-var y = $.html().split('<b>PRIMBON HARI NAAS</b><br><br>')[1];
-    var t = y.split('.</i><br><br>')[1];
-    var f = y.replace(t ," ");
-    var x = f.replace(/<br\s*[\/]?>/gi, "\n\n");
-    var h  = x.replace(/<[^>]*>?/gm, '');
-    var d = h.replace("&amp;", '&')
-console.log(""+ d);
-msg.reply(` 
-
------------------------------------
-
- Cek Hari Naas Kamu ~
- 
- 
- ${d}
- 
- 
- ----------------------------------
-  👾 InsideBot 2020👾
- 
- `); 
-});
-}
-
-else if (msg.body.startsWith("!pasangan ")) {
-const request = require('request');
-var req = msg.body;
-var gh = req.split("!pasangan ")[1];
-
-var namamu = gh.split("&")[0];
-var pasangan = gh.split("&")[1];
-request.get({
-  headers: {'content-type' : 'application/x-www-form-urlencoded'},
-  url:     'http://www.primbon.com/kecocokan_nama_pasangan.php?nama1='+ namamu +'&nama2='+ pasangan +'&proses=+Submit%21+',
- 
-},function(error, response, body){
-    let $ = cheerio.load(body);
-var y = $.html().split('<b>KECOCOKAN JODOH BERDASARKAN NAMA PASANGAN</b><br><br>')[1];
-    var t = y.split('.<br><br>')[1];
-    var f = y.replace(t ," ");
-    var x = f.replace(/<br\s*[\/]?>/gi, "\n");
-    var h  = x.replace(/<[^>]*>?/gm, '');
-    var d = h.replace("&amp;", '&')
-console.log(""+ d);
-msg.reply(` 
-
------------------------------------
-
- *Cek Kecocokan Jodoh Berdasarkan Nama ~*
- 
- 
- ${d}
- 
- 
- ----------------------------------
-  👾 InsideBot 2020 👾
- 
- `); 
-});
-}
-else if (msg.body.startsWith("!ytmp3 ")) {
-var url = msg.body.split(" ")[1];
-var videoid = url.match(/(?:https?:\/{2})?(?:w{3}\.)?youtu(?:be)?\.(?:com|be)(?:\/watch\?v=|\/)([^\s&]+)/);
-var chat = await msg.getChat();
-if(videoid != null) {
-   console.log("video id = ",videoid[1]);
-} else {
-    msg.reply("Videonya gavalid gan.");
-}
-msg.reply(" Tunggu sebentar kak .. Lagi di proses ☺");
-var YoutubeMp3Downloader = require("youtube-mp3-downloader");
-
-//Configure YoutubeMp3Downloader with your settings
-var YD = new YoutubeMp3Downloader({
-    "ffmpegPath": "/usr/bin/ffmpeg", 
-    "outputPath": "./mp3",    // Where should the downloaded and en>
-    "youtubeVideoQuality": "highest",       // What video quality sho>
-    "queueParallelism": 2,                  // How many parallel down>
-    "progressTimeout": 2000                 // How long should be the>
-});
-
-//Download video and save as MP3 file
-YD.download(videoid[1]);
-
-YD.on("finished", function(err, data) {
-const media = MessageMedia.fromFilePath(data.file);
-msg.reply(` 
- 
-   Mp3 Berhasil di download
-   
-  ----------------------------------
-
-Nama File : *${data.videoTitle}*
-Nama : *${data.title}*
-Artis : *${data.artist}*
-
-   ----------------------------------
-👾                          👾
-  _Ytmp3 WhatsApp By InsideBot_
-`);
-chat.sendMessage(media);
-});
-YD.on("progress", function(data) {
-});
-}
-else if (msg.body.startsWith("!quotes")) {
-const request = require('request');
-request.get({
-  headers: {
-'user-agent' : 'Mozilla/5.0 (Linux; Android 8.1.0; vivo 1820) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.110 Mobile Safari/537.36'
-},
-  url: 'https://jagokata.com/kata-bijak/acak.html',
-},function(error, response, body){
-    let $ = cheerio.load(body);
-    var author = $('a[class="auteurfbnaam"]').contents().first().text();
-   var kata = $('q[class="fbquote"]').contents().first().text();
-
-client.sendMessage(
-        msg.from,
-        `
-     _${kata}_
-        
-    
-
-	*~${author}*
-         `
-      );
-
-});
-}
-
-else if (msg.body.startsWith("!nama ")) {
-const cheerio = require('cheerio');
-const request = require('request');
-var nama = msg.body.split("!nama ")[1];
-var req = nama.replace(/ /g,"+");
-request.get({
-  headers: {'content-type' : 'application/x-www-form-urlencoded'},
-  url:     'http://www.primbon.com/arti_nama.php?nama1='+ req +'&proses=+Submit%21+',
-},function(error, response, body){
-    let $ = cheerio.load(body);
-    var y = $.html().split('arti:')[1];
-    var t = y.split('method="get">')[1];
-    var f = y.replace(t ," ");
-    var x = f.replace(/<br\s*[\/]?>/gi, "\n");
-    var h  = x.replace(/<[^>]*>?/gm, '');
-console.log(""+ h);
-msg.reply(
-            `
-      *Arti Dari Namamu*
-
-  ----------------------------------
-         Nama _*${nama}*_ ${h}
-  ----------------------------------
-
-  _InsideBot_
-`
-        );
-});
-}
-else if (msg.body.startsWith("!sifat ")) {
-const cheerio = require('cheerio');
-const request = require('request');
-var req = msg.body.split("[")[1].split("]")[0];
-var nama = req.replace(/ /g," ");
-var pesan = msg.body;
-var y = pesan.replace(/ /g,"+ ");
-var tanggal = y.split("]+")[1].split("-")[0];
-var bulan = y.split("-")[1];
-var tahun = y.split("-")[2];
-request.post({
-  headers: {'content-type' : 'application/x-www-form-urlencoded'},
-  url:     'http://www.primbon.com/sifat_karakter_tanggal_lahir.php',
-  body:    "nama="+ req +"&tanggal="+ tanggal +"&bulan="+ bulan +"&tahun="+ tahun +"&submit=+Submit%21+"
-},function(error, response, body){
- let $ = cheerio.load(body);
-    $('title').after('body')
-    var y = $.html().split('<b>Nama :</b>')[1];
-    var t = y.split('</i><br><br>')[1];
-    var f = y.replace(t ," ");
-    var x = f.replace(/<br\s*[\/]?>/gi, "\n");
-    var h  = x.replace(/<[^>]*>?/gm, '');
-console.log(""+ h);
-            msg.reply(
-            `
-            *Sifat Dari Nama dan Tanggal Lahir*
-         
-  ----------------------------------
-         Nama ${h}
-  ----------------------------------
-
-  _Primbon WhatsApp By InsideBot_
-`
-        );
-});
-  }else if (msg.body.startsWith("!quora ")) {
-const imel = msg.body.split(" ")[1];
-var url = 'http://tools.aqin.my.id/api/quora/api.php?q=' + imel;
-const fetch = require("node-fetch");
-fetch(url)
-.then(res => res.text())
-    .then(body =>
-client.sendMessage(
-      msg.from,
-      `
- ${body}
-
-
-Powered by _fdcibot_
-`));
-}
- else if (msg.body.startsWith("!yt ")) {
-const url = msg.body.split(" ")[1];
-const fs = require('fs');
-const chat = await msg.getChat();
-var videoid = url.match(/(?:https?:\/{2})?(?:w{3}\.)?youtu(?:be)?\.(?:com|be)(?:\/watch\?v=|\/)([^\s&]+)/);
-
- const media = MessageMedia.fromFilePath('mp4/'+ videoid[1] +'.mp4');
- client.sendMessage(
-      msg.from,
-      `
- Tunggu....
-
-
-`);
-var ytdl = require('ytdl-core');
-// TypeScript: import ytdl from 'ytdl-core'; with --esModuleInterop
-// TypeScript: import * as ytdl from 'ytdl-core'; with --allowSyntheticDefaultImports
-// TypeScript: import ytdl = require('ytdl-core'); with neither of the above
-
-ytdl(url)
-  .pipe(fs.createWriteStream('mp4/'+ videoid[1] +'.mp4'));
-  chat.sendMessage(media);
-}
- else if (msg.body.startsWith("!cek ")) {
-const imel = msg.body.split(" ")[1];
-var url = 'https://taqin.my.id/cek.php?email=' + imel;
-const fetch = require("node-fetch");
-fetch(url)
-.then(res => res.text())
-    .then(body =>
-client.sendMessage(
-      msg.from,
-      `
- ${body}
-
-
-Powered by _fdcibot_
-`));
-}
- else if (msg.body.startsWith("!resi ")) {
-    let kurir = msg.body.split(" ")[1];
-    let resi = msg.body.split(" ")[2];
-    console.log(kurir + resi);
-    if (kurir.length != 2 || resi.length != 6) {
-      fetch(`https://api.terhambar.com/resi?resi=${resi}&kurir=${kurir}`)
-        .then((resss) => resss.json())
-        .then((resst) => {
-          if (resst.status != "OK") {
-            msg.reply("*Maaf Server Mencapai Batas Harian! Coba Lagi Besok!*");
-          } else {
-            let ar = [];
-            let sem = "";
-            for (let i = 0; i < Object.keys(resst.lacak.stats).length; i++) {
-              let sendlah =
-                "moment().format('hh:mm:ss') : " +
-                resst.lacak.stats[i].moment().format("hh:mm:ss") +
-                "\nKeterangan : " +
-                resst.lacak.stats[i].keterangan +
-                "\nKota : " +
-                resst.lacak.stats[i].kota +
-                "\n\n";
-              ar.push(sendlah);
-              sem = ar.join("");
-            }
-            console.log(
-              `[${moment().format("hh:mm:ss")}][!fb][${
-                msg.from
-              }] > Berhasil Dilakukan`
-            );
-            msg.reply(
-              "*Berhasil Melacak*\n\n" +
-              "Nama Penerima : " +
-              resst.name +
-              "\nKurir : " +
-              resst.kurir +
-              "\nmoment().format('hh:mm:ss') Input Resi : " +
-              resst.tlg_input +
-              `\n\n*Pelacakan* :\n${sem}`
-            );
-          }
-        });
-    } else {
-      console.log(
-        `[${moment().format("hh:mm:ss")}][!resi][${msg.from}] > GAGAL Dilakukan`
-      );
-      msg.reply("*DATA TIDAK BISA DILACAK!*");
-    }
-  } else if (msg.body == "!resi") {
-    let balas = `_CEK RESI VIA WHATSAPP_\n\nformat cek resi *_!resi kurir nomor resi_*\n\ncontoh > *!resi jnt 6969696969*\n`;
-    msg.reply(balas);
-    console.log(
-      `[${moment().format("hh:mm:ss")}][!resi][${
-        msg.from
-      }] > Berhasil Dilakukan`
-    );
-  } 
- else if (msg.body == "p" ||
-    msg.body === "P") {
-    // Send a new message to the same chat
-    client.sendMessage(msg.from, "kok");
-  } else if (msg.body == " assallamuallaikum") {
-    client.sendMesssage(msg.from, "Waalaikumusallam");
-  } else if (msg.body.startsWith("!sendto ")) {
-    // Direct send a new message to specific id
-    let number = msg.body.split(" ")[1];
-    let messageIndex = msg.body.indexOf(number) + number.length;
-    let message = msg.body.slice(messageIndex, msg.body.length);
-    number = number.includes("@c.us") ? number : `${number}@c.us`;
-    let chat = await msg.getChat();
-    chat.sendSeen();
-    client.sendMessage(number, message);
-  } else if (msg.body == "!chats") {
-    const chats = await client.getChats();
-    client.sendMessage(msg.from, `The bot has ${chats.length} chats open.`);
-  } else if (msg.body == "info" || msg.body == "!help" || msg.body == "!menu") {
-    let localData = client.localData;
-    // console.log(localData);
-    client.sendMessage(
-      msg.from,
-      `  
-◦•●◉✿ ஜ۩۞۩ஜ 𝐈𝐧𝐬𝐢𝐝𝐞 𝐁𝐨𝐭 ஜ۩۞۩ஜ  ✿◉●•◦
-
-  
-
-
-👾 List Menu Bot :
-
- ◦🌉 *_ɦσɾσรcσρε* ~_ 
-
-🌠 *!nama* <nama>
- *_cari arti dari namamu_* 
-
- contoh _!nama Maudy Ayunda_ 
- 
- 🌠 *!quotes*
- *_random quotes dari tokoh terkenal_* 
-
-🌠 *!sifat* [nama] tt-mm-yy
- *_cari sifat berdasarkan nama dan tanggal lahir_* 
-
- contoh _!sifat [Maudy Ayunda] 31-08-199_ 
-
-🌠 *!sial* tt mm yy
- *_cek hari apes mu_* 
-
- contoh _!sial 17 08 1945_ 
-
-🌠 *!pasangan* namamu & pasanganmu
- *_Cek kecocokan jodoh_* 
-
- contoh _!pasangan Riska & Ali_ 
-
-🗃 *_ժօաղlօαժҽɾ* ~_
-
-🔖 *!fb* <url>
- *downloader facebook_* 
- 
-🔖 *!ig* <url>
- *downloader instagram* 
-
-🔖 *!ytmp3* <url>
- *konversi youtube ke mp3_* 
-
-
-              🅜🅞🅡🅔    
-   🅕🅔🅐🅣🅤🅡🅔🅢 🅘🅢 
-🅒🅞🅞🅜🅘🅝🅖 🅢🅞🅞🅝
-
- _Powered By_ : 💞 *InsideHeartz*
-
-`
-    );
-  } else if (msg.body == "!localData") {
-    let localData = client.localData;
-    // console.log(localData);
-    client.sendMessage(
-      msg.from,
-      `
-            *Connection localData*
-            User name: ${localData.pushname}
-            My number: ${localData.me.user}
-            Device: ${localData.phone.device_manufacturer} | ${localData.phone.device_model}
-            Platform: ${localData.platform} ${localData.phone.os_version} 
-            WhatsApp version: ${localData.phone.wa_version}
-        `
-    );
-  } else if (msg.body == "!medial" && msg.hasMedia) {
-    const attachmentData = await msg.downloadMedia();
-    // console.log(attachmentData)
-    msg.reply(`
-            *Media localData*
-            MimeType: ${attachmentData.mimetype}
-            Filename: ${attachmentData.filename}
-            Data (length): ${attachmentData.data.length}
-        `);
-  } else if (msg.body == "!quotel" && msg.hasQuotedMsg) {
-    const quotedMsg = await msg.getQuotedMessage();
-
-    quotedMsg.reply(`
-            ID: ${quotedMsg.id._serialized}
-            Type: ${quotedMsg.type}
-            Author: ${quotedMsg.author || quotedMsg.from}
-            Timestamp: ${quotedMsg.timestamp}
-            Has Media? ${quotedMsg.hasMedia}
-        `);
-  } else if (msg.body == "!resendmedia" && msg.hasQuotedMsg) {
-    const quotedMsg = await msg.getQuotedMessage();
-    if (quotedMsg.hasMedia) {
-      const attachmentData = await quotedMsg.downloadMedia();
-      client.sendMessage(msg.from, attachmentData, {
-        caption: "Here's your requested media."
-      });
-    }
-  } else if (msg.body == "!location") {
-    msg.reply(
-      new Location(37.422, -122.084, "Googleplex\nGoogle Headquarters")
-    );
-  } else if (msg.body == "!mention") {
-    const contact = await msg.getContact();
-    const chat = await msg.getChat();
-    chat.sendMessage(`Hi @${contact.number}!`, {
-      mentions: [contact]
-    });
-  } else if (msg.body == "!delete" && msg.hasQuotedMsg) {
-    const quotedMsg = await msg.getQuotedMessage();
-    if (quotedMsg.fromMe) {
-      quotedMsg.delete(true);
-    } else {
-      msg.reply("I can only delete my own messages");
-    }
-  } else if (msg.body === "!archive") {
-    const chat = await msg.getChat();
-    chat.archive();  
-
-  } else if (msg.body === "!recording") {
-    const chat = await msg.getChat();
-    // simulates recording audio in the chat
-    chat.sendStateRecording();
-  } else if (msg.body === "!clearstate") {
-    const chat = await msg.getChat();
-    // stops typing or recording in the chat
-    chat.clearState();
-  } else if (msg.body === "!mati") {
-    let chat = await msg.getChat();
-    if (chat.isGroup) {
-      msg.reply("Maaf, perintah ini tidak bisa digunakan di dalam grup!");
-    } else {
-      User.checkUser(msg.from).then(result => {
-        if (result) {
-          User.removeUser(msg.from).then(result => {
-            if (result) {
-              client.sendMessage(
-                msg.from,
-                "Berhasil menonaktifkan, anda tidak akan mendapat notifikasi lagi."
-              );
-            } else {
-              client.sendMessage(
-                msg.from,
-                "Gagal menonaktifkan, nomor tidak terdaftar."
-              );
-            }
-          });
-        } else {
-          client.sendMessage(
-            msg.from,
-            "Gagal menonaktifkan, nomor tidak terdaftar."
-          );
-        }
-      });
-    }
-  } else if (msg.body === "!aktif" || msg.body === "!daftar") {
-    let chat = await msg.getChat();
-    if (chat.isGroup) {
-      msg.reply("Maaf, perintah ini tidak bisa digunakan di dalam grup!");
-    } else {
-      User.addUser(msg.from).then(result => {
-        if (!result) {
-          client.sendMessage(msg.from, "Notifikasi sudah aktif.");
-        } else {
-          client.sendMessage(msg.from, "Berhasil mengaktifkan notifikasi.");
-        }
-      });
-    }
-  } else if (msg.body === "!coronaOld") {
-    fs.readFile("./CoronaService/data.json", "utf-8", function(err, data) {
-      if (err) throw err;
-      const localData = JSON.parse(data);
-      const newCases = localData.NewCases === "" ? 0 : localData.NewCases;
-      const newDeaths = localData.NewDeaths === "" ? 0 : localData.NewDeaths;
-      client.sendMessage(
-        msg.from,
-        `                *COVID-19 Update!!*
-Negara: ${localData.Country}
-
-*Kasus aktif: ${localData.ActiveCases}*
-*Total Kasus: ${localData.TotalCases}*
-Kasus Baru: ${newCases}
-
-*Meninggal: ${localData.TotalDeaths}*
-Meninggal Baru: ${newDeaths}
-
-*Total Sembuh: ${localData.TotalRecovered}*
-            
-Sumber: _https://www.worldometers.info/coronavirus/_
-            `
-      );
-      var imageAsBase64 = fs.readFileSync(
-        "./CoronaService/corona.png",
-        "base64"
-      );
-      var CoronaImage = new MessageMedia("image/png", imageAsBase64);
-      client.sendMessage(msg.from, CoronaImage);
-    });
-  } else if (
-    msg.body === "!corona" ||
-    msg.body === "Corona" ||
-    msg.body === "/corona"
-  ) {
-    corona.getAll().then(result => {
-      var aktifIndo =
-        result[0].confirmed - result[0].recovered - result[0].deaths;
-      // var aktifGlob = result[1].confirmed - result[1].recovered - result[1].
-      // Kasus *Global*
-      // Total Kasus: ${result[1].confirmed}
-      // Kasus aktif: ${aktifGlob}
-      // Sembuh: ${result[1].recovered}
-      // Meninggal: ${result[1].deaths}
-      // Update Pada:
-      // ${result[1].lastUpdate}
-      client.sendMessage(
-        msg.from,
-        `
-                    *COVID-19 Update!!*
-
-Kasus *Indonesia* 🇮🇩
-
-😞 Total Kasus: ${result[0].confirmed}
-😷 Kasus aktif: ${aktifIndo}
-😊 Sembuh: ${result[0].recovered}
-😭 Meninggal: ${result[0].deaths}
-
-🕓 Update Pada: 
-${result[0].lastUpdate.replace("pukul", "|")} WIB
-     
-
-Stay safe ya semuanya , jaga kesehatan nya masing masing`
-      );
-      var imageAsBase64 = fs.readFileSync(
-        "./CoronaService/corona.png",
-        "base64"
-      );
-      var CoronaImage = new MessageMedia("image/png", imageAsBase64);
-      client.sendMessage(msg.from, CoronaImage);
-    });
-
-    // ============================================= Groups
-  } else if (msg.body.startsWith("!subject ")) {
-    // Change the group subject
-    let chat = await msg.getChat();
-    if (chat.isGroup) {
-      let newSubject = msg.body.slice(9);
-      chat.setSubject(newSubject);
-    } else {
-      msg.reply("This command can only be used in a group!");
-    }
-  } else if (msg.body.startsWith("!echo ")) {
-    // Replies with the same message
-    msg.reply(msg.body.slice(6));
-  } else if (msg.body.startsWith("!desc ")) {
-    // Change the group description
-    let chat = await msg.getChat();
-    if (chat.isGroup) {
-      let newDescription = msg.body.slice(6);
-      chat.setDescription(newDescription);
-    } else {
-      msg.reply("This command can only be used in a group!");
-    }
-  } else if (msg.body.startsWith("baca ")) {
-    const newStatus = msg.body.split(" ")[1];
-    const fetch = require("node-fetch");
-    let url =
-      "https://al-quran-8d642.firebaseio.com/surat/" +
-      newStatus +
-      ".json?print=pretty";
-
-    fetch(url)
-      .then(res => {
-        return res.json();
-      })
-      .then(resJSON => {
-        resJSON.forEach(item => {
-          client.sendMessage(
-            msg.from,
-            `
-  Ayat ۝, :  
-       *${item.ar}*
-  ----------------------------------
-  Terjemah : 
-       _${item.id}_
-  ----------------------------------
-
-  _Al-Quran WhatsApp By Abdul Muttaqin_
-`
-          );
-        });
-      });
-  } else if (msg.body == "!leave") {
-    // Leave the group
-    let chat = await msg.getChat();
-    if (chat.isGroup) {
-      chat.leave();
-    } else {
-      msg.reply("This command can only be used in a group!");
-    }
-  } else if (msg.body.startsWith("!join ")) {
-    const inviteCode = msg.body.split(" ")[1];
+async function msgHandler (client, message) {
     try {
-      await client.acceptInvite(inviteCode);
-      msg.reply("Joined the group!");
-    } catch (e) {
-      msg.reply("That invite code seems to be invalid.");
-    }
-  } else if (msg.body == "!grouplocalData") {
-    let chat = await msg.getChat();
-    if (chat.isGroup) {
-      msg.reply(`
-                *Group Details*
-                Name: ${chat.name}
-                Description: ${chat.description}
-                Created At: ${chat.createdAt.toString()}
-                Created By: ${chat.owner.user}
-                Participant count: ${chat.participants.length}
-            `);
-    } else {
-      msg.reply("This command can only be used in a group!");
-    }
-  }
-});
+        const { type, id, from, t, sender, isGroupMsg, chat, caption, isMedia, mimetype, quotedMsg } = message
+        let { body } = message
+        const { pushname } = sender
+        const { formattedTitle } = chat
+        const prefix = '#'
+        body = (type == 'chat' && body.startsWith(prefix)) ? body : (type == 'image' && caption.startsWith(prefix)) ? caption : ''
+        const command = body.slice(prefix.length).trim().split(/ +/).shift().toLowerCase()
+        const args = body.slice(prefix.length).trim().split(/ +/).slice(1)
+        const isCmd = body.startsWith(prefix)
+        const time = moment(t * 1000).format('DD/MM HH:mm:ss')
+        if (!isCmd && !isGroupMsg) return console.log('[RECV]', color(time, 'yellow'), 'Message from', color(pushname))
+        if (!isCmd && isGroupMsg) return console.log('[RECV]', color(time, 'yellow'), 'Message from', color(pushname), 'in', color(formattedTitle))
+        if (isCmd && !isGroupMsg) console.log(color('[EXEC]'), color(time, 'yellow'), color(`${command} (${args.length})`), 'from', color(pushname))
+        if (isCmd && isGroupMsg) console.log(color('[EXEC]'), color(time, 'yellow'), color(`${command} (${args.length})`), 'from', color(pushname), 'in', color(formattedTitle))
 
-listen.on("message", (topic, message) => {
-  console.log(`[ ${moment().format("HH:mm:ss")} ] MQTT: ${message.toString()}`);
-  fs.readFile("./CoronaService/user.json", "utf-8", function(err, data) {
-    if (err) throw err;
-    const userData = JSON.parse(data);
-    for (var i = 0; i < userData.length; i++) {
-      let number = userData[i].user;
-      // number = number.includes('@c.us') ? number : `${number}@c.us`;
-      setTimeout(function() {
-        console.log(
-          `[ ${moment().format("HH:mm:ss")} ] Send Corona Update to ${number}`
-        );
-        if (message.toString() === "New Update!") {
-          fs.readFile("./CoronaService/data.json", "utf-8", function(
-            err,
-            data
-          ) {
-            if (err) throw err;
-            const localData = JSON.parse(data);
-            const newCases = localData.NewCases === "" ? 0 : localData.NewCases;
-            const newDeaths =
-              localData.NewDeaths === "" ? 0 : localData.NewDeaths;
-            client.sendMessage(
-              number,
-              `
-                    *COVID-19 Update!!*
-Negara: ${localData.Country}
+        // Checking function speed
+        // const timestamp = moment()
+        // const latensi = moment.duration(moment() - timestamp).asSeconds()
+        const isUrl = new RegExp(/https?:\/\/(www\.)?[-a-zA-Z0-9@:%._+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_+.~#?&//=]*)/gi)
+        const uaOverride = 'WhatsApp/2.2029.4 Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_5) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/83.0.4103.116 Safari/537.36'
 
-Kasus aktif: ${localData.ActiveCases}
-Total Kasus: ${localData.TotalCases}
-*Kasus Baru: ${newCases}*
-        
-Meninggal: ${localData.TotalDeaths}
-*Meninggal Baru: ${newDeaths}*
-        
-Total Sembuh: ${localData.TotalRecovered}
-                    
-Dicek pada: ${moment()
-                .format("LLLL")
-                .replace("pukul", "|")} WIB
-Sumber: 
-_https://www.worldometers.info/coronavirus/_
-                    `
-            );
-          });
+        switch (command) {
+        case 'menu':
+        case 'help': {
+            const text = `👋️ Hi, ${pushname}! \n\nPrefix = #\n\nUsable Commands!✨\n\n*STICKER*\nCMD: #sticker\nDescription: Converts image into sticker, kirim gambar dengan caption #sticker atau balas gambar yang sudah dikirim dengan #sticker\n\nCMD: #sticker <url gambar>\nDescription: Converts image url into sticker\n\nHope you have a great day!✨`
+            client.sendText(from, text)
+            break
         }
-        // Delay 3 Sec
-      }, i * 3000);
+        case 'sticker':
+        case 'stiker':
+            if (isMedia) {
+                const mediaData = await decryptMedia(message, uaOverride)
+                const imageBase64 = `data:${mimetype};base64,${mediaData.toString('base64')}`
+                await client.sendImageAsSticker(from, imageBase64)
+            } else if (quotedMsg && quotedMsg.type == 'image') {
+                const mediaData = await decryptMedia(quotedMsg)
+                const imageBase64 = `data:${quotedMsg.mimetype};base64,${mediaData.toString('base64')}`
+                await client.sendImageAsSticker(from, imageBase64)
+            } else if (args.length == 1) {
+                const url = args[0]
+                if (url.match(isUrl)) {
+                    await client.sendStickerfromUrl(from, url)
+                        .then((r) => {
+                            if (!r) client.sendText(from, 'Maaf, link yang kamu kirim tidak memuat gambar.')
+                        })
+                        .catch((err) => console.log('Caught exception: ', err))
+                } else {
+                    client.reply(from, 'Maaf, link yang kamu kirim tidak valid.', id)
+                }
+            } else {
+                client.reply(from, 'Tidak ada gambar! Untuk membuka daftar perintah kirim #menu', id)
+            }
+            break
+        case 'tiktok': {
+            if (args.length !== 1) return client.reply(from, 'Maaf, link yang kamu kirim tidak valid', id)
+            const url = args[0]
+            if (!url.match(isUrl) && !url.includes('tiktok.com')) return client.reply(from, 'Maaf, link yang kamu kirim tidak valid', id)
+            await client.sendText(from, '*Scraping Metadata...*')
+            await tiktok(url)
+                .then((videoMeta) => {
+                    const filename = videoMeta.authorMeta.name + '.mp4'
+                    const caps = `*Metadata:*\nUsername: ${videoMeta.authorMeta.name} \nMusic: ${videoMeta.musicMeta.musicName} \nView: ${videoMeta.playCount.toLocaleString()} \nLike: ${videoMeta.diggCount.toLocaleString()} \nComment: ${videoMeta.commentCount.toLocaleString()} \nShare: ${videoMeta.shareCount.toLocaleString()} \nCaption: ${videoMeta.text.trim() ? videoMeta.text : '-'} \n\nDonasi: kamu dapat membantuku beli dimsum dengan menyawer melalui https://saweria.co/donate/yogasakti atau mentrakteer melalui https://trakteer.id/red-emperor \nTerimakasih.`
+                    client.sendFileFromUrl(from, videoMeta.url, filename, videoMeta.NoWaterMark ? caps : `⚠ Video tanpa watermark tidak tersedia. \n\n${caps}`, '', { headers: { 'User-Agent': 'okhttp/4.5.0' } })
+                        .catch(err => console.log('Caught exception: ', err))
+                }).catch(() => {
+                    client.reply(from, 'Gagal mengambil metadata, link yang kamu kirim tidak valid', id)
+                })
+        }
+            break
+        case 'ig':
+        case 'instagram': {
+            if (args.length !== 1) return client.reply(from, 'Maaf, link yang kamu kirim tidak valid', id)
+            const url = args[0]
+            if (!url.match(isUrl) && !url.includes('instagram.com')) return client.reply(from, 'Maaf, link yang kamu kirim tidak valid', id)
+            await client.sendText(from, '*Scraping Metadata...*')
+            instagram(url)
+                .then(async (videoMeta) => {
+                    const content = []
+                    for (let i = 0; i < videoMeta.length; i++) {
+                        await urlShortener(videoMeta[i].video)
+                            .then((result) => {
+                                console.log('Shortlink: ' + result)
+                                content.push(`${i + 1}. ${result}`)
+                            }).catch((err) => {
+                                client.sendText(from, 'Error, ' + err)
+                            })
+                    }
+                    client.sendText(from, `Link Download:\n${content.join('\n')} \n\nDonasi: kamu dapat membantuku beli dimsum dengan menyawer melalui https://saweria.co/donate/Skydxz \nTerimakasih.`)
+                }).catch((err) => {
+                    if (err == 'Not a video') return client.reply(from, 'Error, tidak ada video di link yang kamu kirim', id)
+                    client.reply(from, 'Error, user private atau link salah', id)
+                })
+        }
+            break
+        case 'twt':
+        case 'twitter': {
+            if (args.length !== 1) return client.reply(from, 'Maaf, link yang kamu kirim tidak valid', id)
+            const url = args[0]
+            if (!url.match(isUrl) & !url.includes('twitter.com') || url.includes('t.co')) return client.reply(from, 'Maaf, url yang kamu kirim tidak valid', id)
+            await client.sendText(from, '*Scraping Metadata...*')
+            twitter(url)
+                .then(async (videoMeta) => {
+                    try {
+                        if (videoMeta.type == 'video') {
+                            const content = videoMeta.variants.filter(x => x.content_type !== 'application/x-mpegURL').sort((a, b) => b.bitrate - a.bitrate)
+                            const result = await urlShortener(content[0].url)
+                            console.log('Shortlink: ' + result)
+                            client.sendFileFromUrl(from, content[0].url, 'TwitterVideo.mp4', `Link Download: ${result} \n\nDonasi: kamu dapat membantuku beli dimsum dengan menyawer melalui https://saweria.co/donate/yogasakti atau mentrakteer melalui https://trakteer.id/red-emperor \nTerimakasih.`)
+                        } else if (videoMeta.type == 'photo') {
+                            for (let i = 0; i < videoMeta.variants.length; i++) {
+                                await client.sendFileFromUrl(from, videoMeta.variants[i], videoMeta.variants[i].split('/media/')[1], '')
+                            }
+                        }
+                    } catch (err) {
+                        client.sendText(from, 'Error, ' + err)
+                    }
+                }).catch(() => {
+                    client.sendText(from, 'Maaf, link tidak valid atau tidak ada video di link yang kamu kirim')
+                })
+        }
+            break
+        case 'fb':
+        case 'facebook': {
+            if (args.length !== 1) return client.reply(from, 'Maaf, link yang kamu kirim tidak valid', id)
+            const url = args[0]
+            if (!url.match(isUrl) && !url.includes('facebook.com')) return client.reply(from, 'Maaf, url yang kamu kirim tidak valid', id)
+            await client.sendText(from, '*Scraping Metadata...*')
+            facebook(url)
+                .then(async (videoMeta) => {
+                    try {
+                        const title = videoMeta.response.title
+                        const thumbnail = videoMeta.response.thumbnail
+                        const links = videoMeta.response.links
+                        const shorts = []
+                        for (let i = 0; i < links.length; i++) {
+                            const shortener = await urlShortener(links[i].url)
+                            console.log('Shortlink: ' + shortener)
+                            links[i].short = shortener
+                            shorts.push(links[i])
+                        }
+                        const link = shorts.map((x) => `${x.resolution} Quality: ${x.short}`)
+                        const caption = `Text: ${title} \nLink Download: \n${link.join('\n')} \n\nDonasi: kamu dapat membantuku beli dimsum dengan menyawer melalui https://saweria.co/donate/yogasakti atau mentrakteer melalui https://trakteer.id/red-emperor \nTerimakasih.`
+                        client.sendFileFromUrl(from, thumbnail, 'videos.jpg', caption)
+                    } catch (err) {
+                        client.reply(from, 'Error, ' + err, id)
+                    }
+                })
+                .catch((err) => {
+                    client.reply(from, `Error, url tidak valid atau tidak memuat video \n\n${err}`, id)
+                })
+        }
+            break
+        case 'mim':
+        case 'memes':
+        case 'meme': {
+            const { title, url } = await fetchMeme()
+            await client.sendFileFromUrl(from, `${url}`, 'meme.jpg', `${title}`)
+            break
+        }
+        default:
+            console.log(color('[ERROR]', 'red'), color(time, 'yellow'), 'Unregistered Command from', color(pushname))
+            break
+        }
+    } catch (err) {
+        console.log(color('[ERROR]', 'red'), err)
     }
-  });
-});
+}
+
+startServer()
